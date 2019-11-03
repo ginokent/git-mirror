@@ -7,7 +7,7 @@ DESTINATION_REPOSITORY_GIT_SSH_COMMAND="${3:?"$(printf '\n  %s\n  %s' "set \$3 a
 DESTINATION_REPOSITORY_GIT_SSH_URI="${4:?"$(printf '\n  %s\n  %s' "set \$4 as DESTINATION_REPOSITORY_GIT_SSH_URI" "e.g.  git@github.com:djeeno/git-mirror-destination.git")"}"
 
 FORCE=false
-if echo "$*" | grep -E -- ' --force '; then
+if echo "$*" | grep -E -- ' --force'; then
   FORCE=true
 fi
 
