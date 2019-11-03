@@ -8,25 +8,40 @@ DESTINATION_REPOSITORY_GIT_SSH_URI="${4:?"$(printf '\n  %s\n  %s' "set \$4 as DE
 
 TMP_DIR=/tmp/.git-mirror-temporary-directory
 
+cat <<EOF
+## source
+# export GIT_SSH_COMMAND="${SOURCE_REPOSITORY_GIT_SSH_COMMAND}"
+# git clone --mirror ${SOURCE_REPOSITORY_GIT_SSH_URI}
+
+## destination
+# export GIT_SSH_COMMAND="${DESTINATION_REPOSITORY_GIT_SSH_COMMAND}"
+# git push --mirror ${DESTINATION_REPOSITORY_GIT_SSH_URI}
+
+EOF
+
+# pre-check
 if [ -e "${TMP_DIR}" ]; then
   echo "ERROR: ${TMP_DIR} exists, require to remove it."
   exit 1
 fi
 
+## trap
 #trap '{
 #  if [ -e "${TMP_DIR}" ]; then
 #    rm -rf ${TMP_DIR}
 #  fi
 #}' EXIT
 
+# tmp dir
 mkdir -p "${TMP_DIR}"
 cd "${TMP_DIR}"
 
+# source
 export GIT_SSH_COMMAND="${SOURCE_REPOSITORY_GIT_SSH_COMMAND}"
 git clone --mirror "${SOURCE_REPOSITORY_GIT_SSH_URI}"
 
+# destination
 cd "$(basename -- "${SOURCE_REPOSITORY_GIT_SSH_URI}")"
-
 export GIT_SSH_COMMAND="${DESTINATION_REPOSITORY_GIT_SSH_COMMAND}"
 if git push --mirror "${DESTINATION_REPOSITORY_GIT_SSH_URI}" && [ -e "${TMP_DIR}" ]; then
   rm -rf ${TMP_DIR}
