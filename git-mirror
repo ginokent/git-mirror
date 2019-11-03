@@ -6,6 +6,11 @@ SOURCE_REPOSITORY_GIT_SSH_URI="${2:?"$(printf '\n  %s\n  %s' "set \$2 as SOURCE_
 DESTINATION_REPOSITORY_GIT_SSH_COMMAND="${3:?"$(printf '\n  %s\n  %s' "set \$3 as DESTINATION_REPOSITORY_GIT_SSH_COMMAND" "e.g.  \"ssh -i ~/.ssh/id_rsa_destination.pem\"")"}"
 DESTINATION_REPOSITORY_GIT_SSH_URI="${4:?"$(printf '\n  %s\n  %s' "set \$4 as DESTINATION_REPOSITORY_GIT_SSH_URI" "e.g.  git@github.com:djeeno/git-mirror-destination.git")"}"
 
+FORCE=false
+if echo "$*" | grep -E -- ' --force '; then
+  FORCE=true
+fi
+
 TMP_DIR=/tmp/.git-mirror-temporary-directory
 
 cat <<EOF
@@ -13,7 +18,7 @@ cat <<EOF
 # GIT_SSH_COMMAND="${SOURCE_REPOSITORY_GIT_SSH_COMMAND}" git clone --mirror ${SOURCE_REPOSITORY_GIT_SSH_URI}
 
 ## destination
-# GIT_SSH_COMMAND="${DESTINATION_REPOSITORY_GIT_SSH_COMMAND}" git push --mirror ${DESTINATION_REPOSITORY_GIT_SSH_URI}
+# GIT_SSH_COMMAND="${DESTINATION_REPOSITORY_GIT_SSH_COMMAND}" git push "$("${FORCE}" && echo --force)" --mirror ${DESTINATION_REPOSITORY_GIT_SSH_URI}
 
 EOF
 
@@ -39,7 +44,7 @@ GIT_SSH_COMMAND="${SOURCE_REPOSITORY_GIT_SSH_COMMAND}" git clone --mirror "${SOU
 
 # destination
 cd "$(basename -- "${SOURCE_REPOSITORY_GIT_SSH_URI}")"
-GIT_SSH_COMMAND="${DESTINATION_REPOSITORY_GIT_SSH_COMMAND}" git push --mirror "${DESTINATION_REPOSITORY_GIT_SSH_URI}"
+GIT_SSH_COMMAND="${DESTINATION_REPOSITORY_GIT_SSH_COMMAND}" git push "$("${FORCE}" && echo --force)" --mirror "${DESTINATION_REPOSITORY_GIT_SSH_URI}"
 # shellcheck disable=SC2181
 if [ $? -eq 0 ] && [ -e "${TMP_DIR}" ]; then
   rm -rf ${TMP_DIR}
