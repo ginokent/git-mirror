@@ -13,11 +13,11 @@ if [ -e "${TMP_DIR}" ]; then
   exit 1
 fi
 
-trap '{
-  if [ -e "${TMP_DIR}" ]; then
-    rm -rf ${TMP_DIR}
-  fi
-}' EXIT
+#trap '{
+#  if [ -e "${TMP_DIR}" ]; then
+#    rm -rf ${TMP_DIR}
+#  fi
+#}' EXIT
 
 mkdir -p "${TMP_DIR}"
 cd "${TMP_DIR}"
@@ -28,4 +28,6 @@ git clone --mirror "${SOURCE_REPOSITORY_GIT_SSH_URI}"
 cd "$(basename -- "${SOURCE_REPOSITORY_GIT_SSH_URI}")"
 
 export GIT_SSH_COMMAND="${DESTINATION_REPOSITORY_GIT_SSH_COMMAND}"
-git push --mirror "${DESTINATION_REPOSITORY_GIT_SSH_URI}"
+if git push --mirror "${DESTINATION_REPOSITORY_GIT_SSH_URI}" && [ -e "${TMP_DIR}" ]; then
+  rm -rf ${TMP_DIR}
+fi
