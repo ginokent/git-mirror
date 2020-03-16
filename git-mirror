@@ -1,5 +1,5 @@
-#!/bin/sh
-set -e -o pipefail
+#!/usr/bin/env bash
+set -E -o pipefail
 
 SOURCE_REPOSITORY_GIT_SSH_COMMAND="${1:?"$(printf '\n  %s\n  %s' "set \$1 as SOURCE_REPOSITORY_GIT_SSH_COMMAND" "e.g.  \"ssh -i ~/.ssh/id_rsa_source.pem\"")"}"
 SOURCE_REPOSITORY_GIT_SSH_URI="${2:?"$(printf '\n  %s\n  %s' "set \$2 as SOURCE_REPOSITORY_GIT_SSH_URI" "e.g.  git@github.com:djeeno/git-mirror-source.git")"}"
@@ -11,41 +11,32 @@ if echo "$*" | grep -E -- ' --force'; then
   FORCE=true
 fi
 
-TMP_DIR=/tmp/.git-mirror-temporary-directory
+SOURCE_REPOSITORY_DIR="/tmp/.tmp-git-mirror/$(basename -- "${SOURCE_REPOSITORY_GIT_SSH_URI}")"
+SOURCE_COMMAND="GIT_SSH_COMMAND=\"${SOURCE_REPOSITORY_GIT_SSH_COMMAND}\" git clone --mirror \"${SOURCE_REPOSITORY_GIT_SSH_URI}\""
+DESTINATION_COMMAND="GIT_SSH_COMMAND=\"${DESTINATION_REPOSITORY_GIT_SSH_COMMAND}\" git push $(! "${FORCE}" || echo "--force ")--mirror \"${DESTINATION_REPOSITORY_GIT_SSH_URI}\""
 
-cat <<EOF
-## source
-# GIT_SSH_COMMAND="${SOURCE_REPOSITORY_GIT_SSH_COMMAND}" git clone --mirror ${SOURCE_REPOSITORY_GIT_SSH_URI}
-
-## destination
-# GIT_SSH_COMMAND="${DESTINATION_REPOSITORY_GIT_SSH_COMMAND}" git push "$("${FORCE}" && echo --force)" --mirror ${DESTINATION_REPOSITORY_GIT_SSH_URI}
-
+cat << EOF
++-------------+----------------------------------------------------------------------------------------- - - -
+| source      | ${SOURCE_COMMAND}
+| destination | ${DESTINATION_COMMAND}
++-------------+----------------------------------------------------------------------------------------- - - -
 EOF
 
 # pre-check
-if [ -e "${TMP_DIR}" ]; then
-  echo "ERROR: ${TMP_DIR} exists, require to remove it."
+if [ -e "${SOURCE_REPOSITORY_DIR}" ]; then
+  echo "error: ${SOURCE_REPOSITORY_DIR} already exists, require to remove it"
   exit 1
 fi
 
-## trap
-#trap '{
-#  if [ -e "${TMP_DIR}" ]; then
-#    rm -rf ${TMP_DIR}
-#  fi
-#}' EXIT
-
-# tmp dir
-mkdir -p "${TMP_DIR}"
-cd "${TMP_DIR}"
-
 # source
-GIT_SSH_COMMAND="${SOURCE_REPOSITORY_GIT_SSH_COMMAND}" git clone --mirror "${SOURCE_REPOSITORY_GIT_SSH_URI}"
+bash -cx "${SOURCE_COMMAND} \"${SOURCE_REPOSITORY_DIR}\""
 
 # destination
-cd "$(basename -- "${SOURCE_REPOSITORY_GIT_SSH_URI}")"
-GIT_SSH_COMMAND="${DESTINATION_REPOSITORY_GIT_SSH_COMMAND}" git push "$("${FORCE}" && echo --force)" --mirror "${DESTINATION_REPOSITORY_GIT_SSH_URI}"
-# shellcheck disable=SC2181
-if [ $? -eq 0 ] && [ -e "${TMP_DIR}" ]; then
-  rm -rf ${TMP_DIR}
+if ! cd "${SOURCE_REPOSITORY_DIR}"; then
+  echo "error: failed to cd ${SOURCE_REPOSITORY_DIR}"
+  exit 1
+fi
+
+if bash -cx "${DESTINATION_COMMAND}" && [[ -e ${SOURCE_REPOSITORY_DIR} ]]; then
+  rm -rf "${SOURCE_REPOSITORY_DIR}"
 fi
