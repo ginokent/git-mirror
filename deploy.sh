@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 
+# src
 dir="$(cd "$(dirname "$0")" && pwd)"
+src="${dir}/git-mirror"
 
-cmd="${dir}/git-mirror"
+# dst
+bin="/usr/local/bin"
+dst="${bin}/git-mirror"
 
-if [[ -e /usr/local/bin/git-mirror ]]; then
-  echo "already exists"
+# main
+if [[ -e ${dst} ]]; then
+  echo "already exists: ${dst}"
   exit 1
-elif [[ ! -w /usr/local/bin ]]; then
-  echo "permission denied"
+elif [[ ! -w ${bin} ]]; then
+  echo "permission denied: ${bin}"
   exit 1
 fi
 
-ln -s "${cmd}" /usr/local/bin/git-mirror
+ln -s "${src}" "${dst}"
